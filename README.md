@@ -9,7 +9,7 @@ Ce TP implémente une architecture événementielle identique sur deux plateform
 
 ---
 
-## Partie Azure
+## 1. Partie Azure
 
 ### Architecture
 ```
@@ -96,8 +96,9 @@ curl -X POST http://localhost:7071/api/uploadBlob \
 ```
 ![requete via dit bash](image-2.png)
 
+---
 
-## Partie AWS
+## 2. Partie AWS
 
 ### Architecture
 ```
@@ -156,11 +157,11 @@ aws --endpoint-url=http://localhost:4566 dynamodb create-table \
 ![alt text](image-5.png)
 
 
-## Déploiement des fonctions Lambda
+### Déploiement des fonctions Lambda
 
 Les fonctions Lambda sont empaquetées via un script Node (`zip.js`) puis déployées automatiquement via `deploy.sh`.
 
-### Packaging des fonctions
+#### Packaging des fonctions
 
 Le script `zip.js` génère deux archives :
 
@@ -178,7 +179,7 @@ Exécution :
 node zip.js
 ```
 
-### Déploiement
+#### Déploiement
 
 Le script `deploy.sh` :
 
@@ -192,9 +193,9 @@ bash deploy.sh
 ```
 ![alt text](image-6.png)
 
-# Test du pipeline serverless AWS
+#### Test du pipeline serverless AWS
 
-### 1️⃣ Upload d’un fichier dans S3
+#### 1/ Upload d’un fichier dans S3
 
 ```bash
 echo "Hello AWS Serverless" > test.txt
@@ -202,9 +203,8 @@ echo "Hello AWS Serverless" > test.txt
 aws --endpoint-url=http://localhost:4566 s3 cp test.txt s3://mon-bucket-tp/test.txt
 ```
 
----
 
-### 2️⃣ Vérifier que le fichier est dans le bucket
+#### 2/ Vérifier que le fichier est dans le bucket
 
 ```
 aws --endpoint-url=http://localhost:4566 s3ls s3://mon-bucket-tp/
@@ -214,9 +214,8 @@ Résultat attendu :
 
 ![alt text](image-7.png)
 
----
 
-### 3️⃣ Vérifier que la Lambda de traitement s’est déclenchée
+#### 3/ Vérifier que la Lambda de traitement s’est déclenchée
 
 La Lambda `processs3` est déclenchée automatiquement par l’événement S3.
 
@@ -230,9 +229,8 @@ Exemple de résultat :
 
 ![alt text](image-8.png)
 
----
 
-# Fonctionnement final du pipeline AWS
+### Fonctionnement final du pipeline AWS
 
 ```
 Upload fichier
@@ -257,9 +255,8 @@ Upload fichier
 └─────────────────┘
 ```
 
----
 
-# Limitation rencontrée avec LocalStack
+### Limitation rencontrée avec LocalStack
 
 Lors des tests, un comportement incohérent a été observé avec LocalStack :
 
@@ -275,9 +272,7 @@ Malgré cela :
 
 Le pipeline serverless principal reste donc **fonctionnel en local**.
 
----
-
-# Conclusion AWS
+### Conclusion AWS
 
 L’architecture AWS locale permet de reproduire une architecture serverless complète :
 
@@ -290,11 +285,11 @@ LocalStack permet de tester ces interactions **sans compte AWS réel**.
 
 ---
 
-# Analyse comparative Azure vs AWS
+## 3. Analyse comparative Azure vs AWS
 
 Ce TP permet de comparer deux approches du serverless à travers Azure Functions et AWS Lambda.
 
-## Modèle de déclenchement
+### Modèle de déclenchement
 
 Sur **Azure**, les triggers sont configurés de manière déclarative directement dans les fonctions via les bindings. Par exemple, le Blob Trigger permet de déclencher automatiquement une fonction lorsqu’un fichier est ajouté dans un container.
 
@@ -302,13 +297,13 @@ Sur **AWS**, le déclenchement repose sur la configuration explicite des événe
 
 Ainsi, Azure propose un modèle plus intégré avec ses bindings, tandis qu’AWS utilise une approche plus explicite basée sur la configuration des services.
 
-## Developer Experience
+### Developer Experience
 
 La mise en place avec **Azure Functions** est relativement simple grâce aux outils intégrés comme Azure Functions Core Tools et Azurite. Les triggers et les connexions aux services sont facilement configurables via les bindings.
 
 Du côté **AWS**, la configuration demande davantage d’étapes : création des fonctions Lambda, configuration des permissions, mise en place des notifications S3 et gestion de DynamoDB. L’émulation avec LocalStack permet néanmoins de reproduire l’environnement AWS localement.
 
-## Configuration et complexité
+### Configuration et complexité
 
 Azure simplifie la configuration grâce aux **bindings déclaratifs**, qui réduisent la quantité de code nécessaire pour interagir avec les services.
 
@@ -319,7 +314,7 @@ AWS nécessite une configuration plus détaillée, notamment pour :
 
 Cependant, cette approche offre plus de contrôle sur l’architecture.
 
-## Émulation locale
+### Émulation locale
 
 Les deux plateformes proposent des outils d’émulation locale :
 
@@ -328,7 +323,7 @@ Les deux plateformes proposent des outils d’émulation locale :
 
 Azurite est relativement simple à configurer et fonctionne de manière stable avec Azure Functions. LocalStack permet de simuler plusieurs services AWS mais peut présenter certaines limitations ou comportements incohérents lors de l’exécution des fonctions Lambda.
 
-## Portabilité
+### Portabilité
 
 Dans les deux cas, le code métier reste relativement portable. Cependant, les fonctions restent dépendantes des services spécifiques du cloud provider (Blob Storage / Table Storage pour Azure, S3 / DynamoDB pour AWS).
 
@@ -336,7 +331,7 @@ Un changement de plateforme nécessiterait donc d’adapter l’intégration ave
 
 ---
 
-# Conclusion générale
+## Conclusion générale
 
 Ce TP permet de comparer deux approches du serverless :
 
