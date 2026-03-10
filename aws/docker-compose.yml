@@ -8,3 +8,8 @@ services:
       - SERVICES=s3,lambda,dynamodb
       - DEFAULT_REGION=eu-west-1
       - DEBUG=1
+      - LAMBDA_EXECUTOR=local
+      - AWS_ENDPOINT=http://localhost.localstack.cloud:4566
+      - AWS_ENDPOINT_URL=http://host.docker.internal:4566/
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

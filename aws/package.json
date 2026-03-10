@@ -1,0 +1,20 @@
+{
+  "name": "aws",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1005.0",
+    "@aws-sdk/client-s3": "^3.1005.0"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1"
+  }
+}

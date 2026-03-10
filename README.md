@@ -85,7 +85,7 @@ func start
 
 Créer un fichier `body.json` :
 ```json
-{ "name": "test.txt", "content": "Hello Azure Serverless!" }
+{ "name": "test.txt", "content": "Hello Azure Serverless" }
 ```
 
 Envoyer la requête :
@@ -154,3 +154,195 @@ aws --endpoint-url=http://localhost:4566 dynamodb create-table \
   --billing-mode PAY_PER_REQUEST
 ```
 ![alt text](image-5.png)
+
+
+## Déploiement des fonctions Lambda
+
+Les fonctions Lambda sont empaquetées via un script Node (`zip.js`) puis déployées automatiquement via `deploy.sh`.
+
+### Packaging des fonctions
+
+Le script `zip.js` génère deux archives :
+
+- `uploadS3.zip`
+- `processS3.zip`
+
+Chaque archive contient :
+
+- le fichier de la fonction
+- les dépendances `node_modules`
+
+Exécution :
+
+```bash
+node zip.js
+```
+
+### Déploiement
+
+Le script `deploy.sh` :
+
+- zip les fonctions
+- crée les Lambdas
+- configure la permission S3 → Lambda
+- configure la notification S3
+
+```
+bash deploy.sh
+```
+![alt text](image-6.png)
+
+# Test du pipeline serverless AWS
+
+### 1️⃣ Upload d’un fichier dans S3
+
+```bash
+echo "Hello AWS Serverless" > test.txt
+
+aws --endpoint-url=http://localhost:4566 s3 cp test.txt s3://mon-bucket-tp/test.txt
+```
+
+---
+
+### 2️⃣ Vérifier que le fichier est dans le bucket
+
+```
+aws --endpoint-url=http://localhost:4566 s3ls s3://mon-bucket-tp/
+```
+
+Résultat attendu :
+
+![alt text](image-7.png)
+
+---
+
+### 3️⃣ Vérifier que la Lambda de traitement s’est déclenchée
+
+La Lambda `processs3` est déclenchée automatiquement par l’événement S3.
+
+Elle lit le fichier et écrit un enregistrement dans DynamoDB.
+
+```
+aws --endpoint-url=http://localhost:4566 dynamodb scan--table-name tp-results
+```
+
+Exemple de résultat :
+
+![alt text](image-8.png)
+
+---
+
+# Fonctionnement final du pipeline AWS
+
+```
+Upload fichier
+      │
+      ▼
+┌───────────────┐
+│   S3 Bucket   │
+│ mon-bucket-tp │
+└───────┬───────┘
+        │
+        │ S3 Event Notification
+        ▼
+┌─────────────────┐
+│   processS3     │
+│  AWS Lambda     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│    DynamoDB     │
+│    tp-results   │
+└─────────────────┘
+```
+
+---
+
+# Limitation rencontrée avec LocalStack
+
+Lors des tests, un comportement incohérent a été observé avec LocalStack :
+
+- `lambda list-functions` affiche correctement les fonctions
+- mais `lambda get-function` et `lambda invoke` retournent parfois `ResourceNotFoundException`
+![alt text](image-9.png)
+
+Malgré cela :
+
+- la notification **S3 → Lambda fonctionne correctement**
+- la Lambda `processs3` est bien déclenchée
+- les données sont correctement écrites dans **DynamoDB**
+
+Le pipeline serverless principal reste donc **fonctionnel en local**.
+
+---
+
+# Conclusion AWS
+
+L’architecture AWS locale permet de reproduire une architecture serverless complète :
+
+- stockage d’objet avec **S3**
+- déclenchement automatique via **S3 Event Notification**
+- traitement via **AWS Lambda**
+- stockage structuré via **DynamoDB**
+
+LocalStack permet de tester ces interactions **sans compte AWS réel**.
+
+---
+
+# Analyse comparative Azure vs AWS
+
+Ce TP permet de comparer deux approches du serverless à travers Azure Functions et AWS Lambda.
+
+## Modèle de déclenchement
+
+Sur **Azure**, les triggers sont configurés de manière déclarative directement dans les fonctions via les bindings. Par exemple, le Blob Trigger permet de déclencher automatiquement une fonction lorsqu’un fichier est ajouté dans un container.
+
+Sur **AWS**, le déclenchement repose sur la configuration explicite des événements. Dans notre cas, une **S3 Event Notification** déclenche la Lambda `processS3` lorsqu’un objet est créé dans le bucket.
+
+Ainsi, Azure propose un modèle plus intégré avec ses bindings, tandis qu’AWS utilise une approche plus explicite basée sur la configuration des services.
+
+## Developer Experience
+
+La mise en place avec **Azure Functions** est relativement simple grâce aux outils intégrés comme Azure Functions Core Tools et Azurite. Les triggers et les connexions aux services sont facilement configurables via les bindings.
+
+Du côté **AWS**, la configuration demande davantage d’étapes : création des fonctions Lambda, configuration des permissions, mise en place des notifications S3 et gestion de DynamoDB. L’émulation avec LocalStack permet néanmoins de reproduire l’environnement AWS localement.
+
+## Configuration et complexité
+
+Azure simplifie la configuration grâce aux **bindings déclaratifs**, qui réduisent la quantité de code nécessaire pour interagir avec les services.
+
+AWS nécessite une configuration plus détaillée, notamment pour :
+- les permissions IAM
+- les déclencheurs d’événements
+- la configuration des ressources.
+
+Cependant, cette approche offre plus de contrôle sur l’architecture.
+
+## Émulation locale
+
+Les deux plateformes proposent des outils d’émulation locale :
+
+- **Azurite** pour Azure Storage
+- **LocalStack** pour les services AWS
+
+Azurite est relativement simple à configurer et fonctionne de manière stable avec Azure Functions. LocalStack permet de simuler plusieurs services AWS mais peut présenter certaines limitations ou comportements incohérents lors de l’exécution des fonctions Lambda.
+
+## Portabilité
+
+Dans les deux cas, le code métier reste relativement portable. Cependant, les fonctions restent dépendantes des services spécifiques du cloud provider (Blob Storage / Table Storage pour Azure, S3 / DynamoDB pour AWS).
+
+Un changement de plateforme nécessiterait donc d’adapter l’intégration avec les services de stockage et les mécanismes de déclenchement.
+
+---
+
+# Conclusion générale
+
+Ce TP permet de comparer deux approches du serverless :
+
+- **Azure Functions** utilise un modèle fortement déclaratif avec des *bindings* simplifiant l’accès aux services (Blob Storage, Table Storage).
+- **AWS Lambda** nécessite une configuration plus explicite (permissions, triggers S3, configuration DynamoDB).
+
+L’émulation locale avec **Azurite** et **LocalStack** permet de tester ces architectures sans utiliser de ressources cloud réelles.
+
+Malgré certaines limitations de l’émulation Lambda dans LocalStack, les deux architectures ont pu être exécutées localement et démontrent le fonctionnement d’une architecture **événementielle serverless complète**.
