@@ -95,3 +95,62 @@ curl -X POST http://localhost:7071/api/uploadBlob \
   -d @body.json
 ```
 ![requete via dit bash](image-2.png)
+
+
+## Partie AWS
+
+### Architecture
+```
+Event JSON (CLI)
+        │
+        ▼
+┌─────────────────┐
+│   uploadS3      │  ← AWS Lambda (invocation directe CLI)
+│                 │  reçoit {name, content}
+└────────┬────────┘
+         │ écrit le fichier
+         ▼
+┌─────────────────┐
+│   Bucket S3     │  ← LocalStack (bucket "mon-bucket-tp")
+└────────┬────────┘
+         │ déclenche automatiquement (S3 Event Notification)
+         ▼
+┌─────────────────┐
+│   processS3     │  ← AWS Lambda (S3 Trigger)
+│                 │  lit l'objet S3, écrit dans DynamoDB
+└────────┬────────┘
+         │ écrit l'enregistrement
+         ▼
+┌─────────────────┐
+│    DynamoDB     │  ← LocalStack (table "tp-results")
+│                 │  id, fileName, processedAt, size, excerpt
+└─────────────────┘
+```
+
+### Prérequis
+
+- Docker Desktop
+- AWS CLI v2
+- Node.js 18+
+
+### Lancer la partie AWS en local
+
+**1. Démarrer LocalStack**
+```bash
+cd aws
+docker compose up
+```
+![Docker first up](image-3.png)
+![alt text](image-4.png)
+
+**2. Créer les ressources AWS (première fois uniquement)**
+```bash
+aws --endpoint-url=http://localhost:4566 s3 mb s3://mon-bucket-tp
+
+aws --endpoint-url=http://localhost:4566 dynamodb create-table \
+  --table-name tp-results \
+  --attribute-definitions AttributeName=id,AttributeType=S \
+  --key-schema AttributeName=id,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+![alt text](image-5.png)
