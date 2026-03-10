@@ -1,13 +1,31 @@
 const { app } = require('@azure/functions');
+const { BlobServiceClient } = require('@azure/storage-blob');
 
 app.http('uploadBlob', {
-    methods: ['GET', 'POST'],
+    methods: ['POST'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
-        context.log(`Http function processed request for url "${request.url}"`);
+        context.log('uploadBlob function triggered');
 
-        const name = request.query.get('name') || await request.text() || 'world';
+        const body = await request.json();
+        const { name, content } = body;
 
-        return { body: `Hello, ${name}!` };
+        if (!name || !content) {
+            return { status: 400, body: 'Missing name or content' };
+        }
+
+        const blobServiceClient = BlobServiceClient.fromConnectionString(
+            "UseDevelopmentStorage=true"
+        );
+        const containerClient = blobServiceClient.getContainerClient('uploads');
+
+        // Crée le container s'il n'existe pas
+        await containerClient.createIfNotExists();
+
+        const blockBlobClient = containerClient.getBlockBlobClient(name);
+        await blockBlobClient.upload(content, Buffer.byteLength(content));
+
+        context.log(`Blob "${name}" uploaded successfully`);
+        return { status: 200, body: `File "${name}" uploaded to Blob Storage` };
     }
 });
