@@ -289,45 +289,13 @@ LocalStack permet de tester ces interactions **sans compte AWS réel**.
 
 Ce TP permet de comparer deux approches du serverless à travers Azure Functions et AWS Lambda.
 
-### Modèle de déclenchement
-
-Sur **Azure**, les triggers sont configurés de manière déclarative directement dans les fonctions via les bindings. Par exemple, le Blob Trigger permet de déclencher automatiquement une fonction lorsqu’un fichier est ajouté dans un container.
-
-Sur **AWS**, le déclenchement repose sur la configuration explicite des événements. Dans notre cas, une **S3 Event Notification** déclenche la Lambda `processS3` lorsqu’un objet est créé dans le bucket.
-
-Ainsi, Azure propose un modèle plus intégré avec ses bindings, tandis qu’AWS utilise une approche plus explicite basée sur la configuration des services.
-
-### Developer Experience
-
-La mise en place avec **Azure Functions** est relativement simple grâce aux outils intégrés comme Azure Functions Core Tools et Azurite. Les triggers et les connexions aux services sont facilement configurables via les bindings.
-
-Du côté **AWS**, la configuration demande davantage d’étapes : création des fonctions Lambda, configuration des permissions, mise en place des notifications S3 et gestion de DynamoDB. L’émulation avec LocalStack permet néanmoins de reproduire l’environnement AWS localement.
-
-### Configuration et complexité
-
-Azure simplifie la configuration grâce aux **bindings déclaratifs**, qui réduisent la quantité de code nécessaire pour interagir avec les services.
-
-AWS nécessite une configuration plus détaillée, notamment pour :
-- les permissions IAM
-- les déclencheurs d’événements
-- la configuration des ressources.
-
-Cependant, cette approche offre plus de contrôle sur l’architecture.
-
-### Émulation locale
-
-Les deux plateformes proposent des outils d’émulation locale :
-
-- **Azurite** pour Azure Storage
-- **LocalStack** pour les services AWS
-
-Azurite est relativement simple à configurer et fonctionne de manière stable avec Azure Functions. LocalStack permet de simuler plusieurs services AWS mais peut présenter certaines limitations ou comportements incohérents lors de l’exécution des fonctions Lambda.
-
-### Portabilité
-
-Dans les deux cas, le code métier reste relativement portable. Cependant, les fonctions restent dépendantes des services spécifiques du cloud provider (Blob Storage / Table Storage pour Azure, S3 / DynamoDB pour AWS).
-
-Un changement de plateforme nécessiterait donc d’adapter l’intégration avec les services de stockage et les mécanismes de déclenchement.
+| Critère | Azure Functions | AWS Lambda |
+|-------|----------------|-------------|
+| **Modèle de déclenchement** | Les triggers sont configurés de manière **déclarative** via les *bindings*. Par exemple, un **Blob Trigger** déclenche automatiquement une fonction lors de l’ajout d’un fichier dans un container. | Les déclencheurs sont configurés via les **événements des services AWS**. Dans ce TP, une **S3 Event Notification** déclenche la Lambda `processS3` lors de la création d’un objet dans le bucket. |
+| **Developer Experience** | Mise en place relativement simple grâce aux outils intégrés : **Azure Functions Core Tools** et **Azurite**. Les connexions aux services sont simplifiées par les bindings. | Configuration plus détaillée : création des Lambdas, gestion des permissions IAM, configuration des notifications S3 et de DynamoDB. **LocalStack** permet néanmoins de reproduire l’environnement AWS localement. |
+| **Configuration et complexité** | Les **bindings déclaratifs** simplifient l’accès aux services et réduisent la quantité de code nécessaire. | Nécessite davantage de configuration : permissions IAM, configuration des événements et des ressources. Cette approche offre cependant **plus de contrôle sur l’architecture**. |
+| **Émulation locale** | **Azurite** permet d’émuler les services de stockage Azure et s’intègre facilement avec Azure Functions. | **LocalStack** permet de simuler plusieurs services AWS (S3, Lambda, DynamoDB), mais peut parfois présenter certaines limitations ou comportements incohérents. |
+| **Portabilité** | Le code métier reste portable, mais dépend des services Azure comme **Blob Storage** et **Table Storage**. | Le code reste portable, mais dépend des services AWS comme **S3** et **DynamoDB**. Un changement de plateforme nécessite d’adapter les intégrations avec les services cloud. |
 
 ---
 
